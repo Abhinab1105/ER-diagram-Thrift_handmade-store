@@ -1,0 +1,144 @@
+// users , products,payment,orders,cart,dlivery status , history 
+// THrift -> quantity,quality, features
+// Handmade -> Bulk
+
+user_profile [icon : user]{
+  user_id INT PK
+  username VARCHAR(255) NOT NULL
+  email VARCHAR(255) NOT NULL
+
+  email_verification_token text
+  forgot_password_token text
+
+  password VARCHAR(100) 
+  avatar_url text
+  
+  Created_At DATE
+  Updated_At DATE
+}
+
+products [icon: gcp-marketplace] {
+  prod_id INT PK
+  prod_image text
+  prod_desc text
+  price INT NOT NULL
+  quantity INT NOT NULL DEFAULT 1
+  isThrift BOOLEAN DEFAULT FALSE
+
+  Created_At DATE
+  Updated_At DATE
+}
+
+
+thrift{
+  thrift_id INT PK
+  condition [Good , needs maintainance]
+
+  prod_id FK
+}
+
+products.prod_id - thrift.prod_id
+
+handmade{
+  handmade_id INT PK
+  bulk_order_available BOOLEAN DEFAULT FALSE
+  min_bulk_quantity INT
+
+  prod_id FK
+}
+
+handmade.prod_id - products.prod_id
+
+cart  [icon: shopping-bag]{
+  cart_id INT PK
+
+  author_id FK
+
+  Created_At DATE
+  Updated_At DATE
+}
+
+cart.author_id - user_profile.user_id
+
+cart_items {
+  cart_item_id INT PK
+  quantity INT NOT NULL DEFAULT 1  
+
+  cart_id FK
+  prod_id FK
+}
+
+cart_items.cart_id > cart.cart_id
+cart_items.prod_id - products.prod_id
+
+orders [icon: list-ordered]{
+  order_id INT PK
+  total_amount DECIMAL(10,2) 
+  author_id FK
+
+  Created_At DATE
+  Updated_At DATE
+}
+
+user_profile.user_id < orders.author_id
+
+order_item {
+  order_item_id INT PK
+  quantity INT NOT NULL
+  prod_id FK
+  order_id FK
+  price_at_purchase DECIMAL(10,2) NOT NULL
+}
+
+order_item.order_id > orders.order_id
+order_item.prod_id - products.prod_id
+
+payments [icon : payment]{
+  payment_id INT PK
+  payment_method [card,upi,cod]
+  payment_status ENUM[success,failed,pending,CANCELLED]
+
+  transaction_id VARCHAR(255)
+
+  order_id FK
+
+  Created_At DATE
+  Updated_At DATE
+}
+
+payments.order_id - orders.order_id
+
+delivery_status{
+  status_id INT PK
+  order_id FK
+  status ENUM(PROCESSING,SHIPPED,OUT_FOR_DELIVERY,DELIVERED,CANCELLED,RETURNED)
+
+
+  tracking_no VARCHAR(255)
+
+  shipped_at DATE
+  delivered_at DATE
+
+  Created_At DATE
+  Updated_At DATE
+}
+
+delivery_status.order_id - orders.order_id
+
+order_history {
+    history_id INT PK
+    order_id INT FK
+    status ENUM(
+        'PROCESSING',
+        'SHIPPED',
+        'OUT_FOR_DELIVERY',
+        'DELIVERED',
+        'CANCELLED',
+        'RETURNED'
+    )
+    changed_at TIMESTAMP
+}
+
+order_history.order_status -delivery_status.status
+
+ order_history.price_at_checkout -orders.total_amount
